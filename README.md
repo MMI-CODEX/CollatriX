@@ -50,6 +50,9 @@ CollatriX can also calcuate several body condition metrics for cetaceans.
 To install CollatriX as an application go to our [releases page](https://github.com/MMI-CODEX/CollatriX/releases) and download the dmg (for macs) or exe (for windows).
 Check out the [manual](https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf) for more detail.
 
+**Note** IF you are using a mac - you’ll also need exiftool installed. If you already have it installed, great! If not, download the zipfile [here](https://github.com/cbirdferrer/collatrix-OLD/blob/293d8e37f5a9c82b60726dcb8b4decbad4bb48dc/collatrix/install_exiftool_mac.zip) for an easy download 
+
+
 ## Usage
 Please read our [manual](https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf) and check out our [tutorial videos](https://media.oregonstate.edu/playlist/dedicated/1_hm9cgwh4/1_v8r3wntu) for detailed instructions.
 
