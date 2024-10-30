@@ -2305,7 +2305,7 @@ class MainWindow(QMainWindow):
 
         manual_label = QLabel("Click here to see our online manual")
         manual = QPushButton("Manual",self)
-        manual.clicked.connect(lambda: webbrowser.open('https://github.com/cbirdferrer/collatrix/files/12324107/CollatriX_v2_BETA_manual_230811.pdf'))
+        manual.clicked.connect(lambda: webbrowser.open('https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf'))
 
         spacer1 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         spacer2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
