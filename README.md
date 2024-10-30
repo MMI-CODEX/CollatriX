@@ -59,7 +59,9 @@ If you use this software please cite our paper:
 
 Additionally:
 * if you calculate Body Volume cite:
-*Christiansen, F., Vivier, F., Charlton, C., Ward, R., Amerson, A., Burnell, S., & Bejder, L. Maternal body size and condition determine calf growth rates in southern right whales (2018). Maternal body size and condition determine calf growth rates in southern right whales. Marine Ecology Progress Series, 592, 267–281. http://doi.org/10.3354/meps12522*
+  * Circular frustums: *Christiansen, F., Vivier, F., Charlton, C., Ward, R., Amerson, A., Burnell, S., & Bejder, L. Maternal body size and condition determine calf growth rates in southern right whales (2018). Maternal body size and condition determine calf growth rates in southern right whales. Marine Ecology Progress Series, 592, 267–281. http://doi.org/10.3354/meps12522*
+
+  * Elliptical: *Christiansen F,  Sironi M,  Moore MJ, et al.  Estimating body mass of free-living whales using aerial photogrammetry and 3D volumetrics. Methods Ecol Evol.  2019; 10: 2034–2044. https://doi.org/10.1111/2041-210X.13298* 
 
 * if you calucalte BAI cite: 
 *Burnett, Jonathan D., Leila Lemos, Dawn Barlow, Michael G. Wing, Todd Chandler, and Leigh G. Torres. 2018. “Estimating Morphometric Attributes of Baleen Whales with Photogrammetry from Small UASs: A Case Study with Blue and Gray Whales.” Marine Mammal Science 35 (1): 108–39. https://doi.org/10.1111/mms.12527.*
