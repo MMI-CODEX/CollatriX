@@ -1,52 +1,87 @@
-# CollatriX
-[![DOI](https://joss.theoj.org/papers/10.21105/joss.02328/status.svg)](https://doi.org/10.21105/joss.02328)  [![DOI](https://zenodo.org/badge/243385218.svg)](https://zenodo.org/badge/latestdoi/243385218) [![Anaconda-Server Badge](https://anaconda.org/cbird/collatrix/badges/version.svg)](https://anaconda.org/cbird/collatrix)
+<h1 align="center">CollatriX 2.0</h1>
 
-## Background
-This function collates the csv outputs from the MorphoMetriX photogrammetry GUI (https://github.com/wingtorres/morphometrix) into one large single data frame containing the image, animal ID, measurements, and notes.  
-CollatriX was designed with several add-ons. A figure showing the different routes available is included below:  
-![alt text](https://github.com/cbirdferrer/collatrix/blob/master/images/Figure1.png)
 
-The altitude calibration function (`collatrix.altitude_calib`) can be used to calculate corrected altitudes using images of an object of known length. If used, this function should be used before the main function. The output can be used to create the safety input file for the main `collatrix` function. Note that the altitude calibration function is not required, the user can start the workflow using the main `collatrix` function. The output of this main function can then be used to calculate metrics of whale body condition (`collatrix.whale_bc`) if desired.
+  <p align="center">
+    User-Friendly Photogrammetry Software
+    <br/>
+    <br/>
+    <a href="https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf"><strong>Read the Manual »</strong></a>
+    <br/>
+    <br/>
+    <a href="https://github.com/MMI-CODEX/CollatriX/issues">Report Bug</a>
+    .
+    <a href="https://github.com/MMI-CODEX/CollatriX/issues">Request Feature</a>
+  </p>
+</p>
+<div align="center">
 
-## Documentation
-Information on how to install and use `collatrix` and example code can be found in our [wiki](https://github.com/cbirdferrer/collatrix/wiki)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.02328/status.svg)](https://doi.org/10.21105/joss.02328)
+ [![DOI](https://zenodo.org/badge/243385218.svg)](https://zenodo.org/badge/latestdoi/243385218)
+![Downloads](https://img.shields.io/github/downloads/MMI-CODEX/CollatriX/total) 
+![Contributors](https://img.shields.io/github/contributors/MMI-CODEX/CollatriX?color=dark-green) 
+![Stargazers](https://img.shields.io/github/stars/MMI-CODEX/CollatriX?style=social) 
+![Issues](https://img.shields.io/github/issues/MMI-CODEX/CollatriX) 
+![License](https://img.shields.io/github/license/MMI-CODEX/CollatriX) 
 
-## Demo
-A demonstration is available in the [demo](https://github.com/cbirdferrer/collatrix/tree/master/demo) directory. The demo includes a separate README file with instructions for what inputs to use.
+</div>
 
-### Automated Testing
-A GitHub Action has been set up to test the main `collatrix` function when an update is pushed to the master branch using `pytest`. If you are working on editing `collatrix` and would like to run the automated tests locally, open a terminal or command prompt window, then change the directory (`cd`) to the folder where you have cloned `collatrix` to, then type `pytest`, the test should then run.
+## Table Of Contents
 
-For example:
+* [About the Project](#about-the-project)
+* [Getting Started](#getting-started)
+* [Usage](#usage)
+* [Attribution](#attribution)
+* [Contributing](#contributing)
+* [License](#license)
+* [Authors](#authors)
 
-```bash
-(base) :~ user$ cd github/collatrix
-(base) :collatrix user$ pytest
-```
+## About The Project
+The path from measuring an image to having a clean dataset of measurements can often be complicated. CollatriX was designed to help.
 
-# Attribution
+This all started with the simple need for a tool to collate the csv outputs from [MorphoMetriX](https://github.com/MMI-CODEX/MorphoMetriX-V2)  into one large single data frame containing the image, animal ID, measurements, and notes.
+
+But calculating accurate measurements requires more. CollatriX V2 now has several additional tools to bring in altitude measurements from a laser altimter by helping accurately correct timestamps and merge datasets.
+
+CollatriX can also calcuate several body condition metrics for cetaceans.
+ 
+![alt text](https://github.com/MMI-CODEX/CollatriX/blob/701dc27b8ee2c76bafa407235a2a3e94bc82cd38/CollatriX_Workflow.png)
+
+## Getting Started
+To install CollatriX as an application go to our [releases page](https://github.com/MMI-CODEX/CollatriX/releases) and download the dmg (for macs) or exe (for windows).
+Check out the [manual](https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf) for more detail.
+
+## Usage
+Please read our [manual](https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf) and check out our [tutorial videos](https://media.oregonstate.edu/playlist/dedicated/1_hm9cgwh4/1_v8r3wntu) for detailed instructions.
+
+## Attribution
 If you use this software please cite our paper:  
 *Bird C.N. & Bierlich K.C., (2020). CollatriX: A GUI to collate MorphoMetriX outputs. Journal of Open Source Software, 5(51), 2328, https://doi.org/10.21105/joss.02328*
 
 Additionally:
-* if you used `collatrix.whale_bc` to calculate Body Volume cite:
+* if you calculate Body Volume cite:
 *Christiansen, F., Vivier, F., Charlton, C., Ward, R., Amerson, A., Burnell, S., & Bejder, L. Maternal body size and condition determine calf growth rates in southern right whales (2018). Maternal body size and condition determine calf growth rates in southern right whales. Marine Ecology Progress Series, 592, 267–281. http://doi.org/10.3354/meps12522*
 
-* if you used `collatrix.whale_bc ` to calculate BAI or `collatrix.altitude_calib` for the altitude calibration cite: 
+* if you calucalte BAI cite: 
 *Burnett, Jonathan D., Leila Lemos, Dawn Barlow, Michael G. Wing, Todd Chandler, and Leigh G. Torres. 2018. “Estimating Morphometric Attributes of Baleen Whales with Photogrammetry from Small UASs: A Case Study with Blue and Gray Whales.” Marine Mammal Science 35 (1): 108–39. https://doi.org/10.1111/mms.12527.*
 
-# Contributing
-We designed CollatriX with future collaborations in mind and we'd love for you to contribute! If you'd like to contribute please see our [contributing guidelines](https://github.com/cbirdferrer/collatrix/blob/master/CONTRIBUTING.md)
+## Contributing
+We designed CollatriX with future collaborations in mind and we'd love for you to contribute! If you'd like to contribute please see our [contributing guidelines](https://github.com/MMI-CODEX/CollatriX/blob/701dc27b8ee2c76bafa407235a2a3e94bc82cd38/CONTRIBUTING.md)
 
-# Code of Conduct
-See our [code of conduct](https://github.com/cbirdferrer/collatrix/blob/master/CODE_OF_CONDUCT.md)
+### Creating A Pull Request
 
-# License
-[![Anaconda-Server Badge](https://anaconda.org/cbird/collatrix/badges/license.svg)](https://anaconda.org/cbird/collatrix)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
 
 Copyright (c) 2020 Clara Bird, KC Bierlich
 
 `Collatrix` is free software made available under the MIT License. For details see the the [LICENSE](https://github.com/cbirdferrer/collatrix/blob/master/LICENSE) file.
 
-# Contributors
-Clara N. Bird and KC Bierlich are the developers of this software.
+## Authors
+
+* **Clara N. Bird** - *Researcher, PhD Wildlife Science* - [Clara Bird](https://mmi.oregonstate.edu/people/clara-bird)
+* **KC Bierlich** - *Assistant Professor Senior Research, PhD Marine Science and Conservation* - [KC Bierlich](https://mmi.oregonstate.edu/people/kevin-bierlich)
