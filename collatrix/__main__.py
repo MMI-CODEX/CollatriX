@@ -24,7 +24,7 @@ from PySide6.QtGui import QFont, QDoubleValidator, QStandardItemModel, QStandard
 
 
 # UPDATE WITH UPDATES
-cx_version = "v2.0"
+cx_version = "v2.0.1"
 
 class FileSelector:
     def select_file():
@@ -108,7 +108,7 @@ class lidarwranglerWindow(QWidget):
 
         #lidar kind drop box
         self.lidartypes_list = QComboBox(self)
-        self.lidartypes_list.addItems(['LightWare (csv)','LemHex (gpx)'])
+        self.lidartypes_list.addItems(['LightWare (csv)','O3ST (csv)','LemHex (gpx)'])
 
         #lidar gimbal drop box
         self.gimbal_list = QComboBox(self)
@@ -187,28 +187,36 @@ class lidarwranglerWindow(QWidget):
                 self.outfold_sel_label.setText(dir_path)
 
     def lidarwrangle(self):
-        # wrangle lightaware data
-        if self.lidartypes_list.currentText() == 'LightWare (csv)':
+        # wrangle lightaware or O3ST data
+        if self.lidartypes_list.currentText() in ['LightWare (csv)','O3ST (csv)']:
             lidar_files = [os.path.join(r, m) for r, dirs, files in os.walk(self.lidarpath) for m in files if m.endswith(('.csv',".CSV")) & ~m.startswith(".")]
             laser_all = pd.DataFrame(data={})
             for lf in lidar_files:
                 df_laser = pd.read_csv(lf,sep='\t',skiprows=2) #read in lidar file, seperator is a tab, skip the first two rows, they have too few columns
-                df_laser['laser_altitude_cm'] = df_laser['laser_altitude_cm'].replace(dict.fromkeys([13000,15000], np.nan)) #make the error value (130) to nan
                 
+                ## the lightware and O3ST have slightly different outputs, so using the laser altitude column from each model
+                if self.lidartypes_list.currentText() == 'LightWare (csv)':
+                    df_laser['laser_altitude_cm'] = df_laser['laser_altitude_cm'].replace(dict.fromkeys([13000,15000], np.nan)) #make the error value (130) to nan
+                elif self.lidartypes_list.currentText() == 'O3ST (csv)':
+                    df_laser['laser_altitude_cm'] = df_laser['laser_distance_cm'].replace(dict.fromkeys([13000,15000], np.nan)) #make the error value (130) to nan
+                
+                ## adjusting altitude for tilt if altimeter not gimbaled
                 if self.gimbal_list.currentText() == 'fixed':
                     df_laser['converted'] = [math.cos((x) * math.pi / float(180)) for x in df_laser['tilt_deg']] #calculate conversation factor based on tilt degree (from Dawson paper code)
                     df_laser['Laser_Alt'] = (df_laser['laser_altitude_cm'] * df_laser['converted']) / float(100) #use conversation factor to calculate corrected laser altitude (from Dawson)
-
                 elif self.gimbal_list.currentText() == 'gimbaled':
                     df_laser['Laser_Alt'] = df_laser['laser_altitude_cm'] / float(100)
 
+                ## creating datetime column
                 df_laser['CorrDT'] = [datetime.strptime("{0} {1}".format(x,y),"%Y/%m/%d %H:%M:%S") for x,y in zip(df_laser['#gmt_date'],df_laser['gmt_time'])]
+                
                 laser_all = pd.concat([laser_all,df_laser])
 
             #maybe only export a subset of columns??
             #export 
             laser_all.to_csv(os.path.join(self.outpath,"{0}_CleanedLidar.csv".format(self.output_prefix_box.text())),index=False)
 
+        # wrangle lemhex gpx data
         elif self.lidartypes_list.currentText() == 'LemHex (gpx)':
             #pull laser files
             lidar_files = [os.path.join(r, m) for r, dirs, files in os.walk(self.lidarpath) 
@@ -246,6 +254,276 @@ class lidarwranglerWindow(QWidget):
 
             #export 
             laser_all.to_csv(os.path.join(self.outpath,"{0}_CleanedLidar.csv".format(self.output_prefix_box.text())),index=False)
+
+        # print message telling user that its done running!
+        self.end_msg.setText("Done running - check output folder for files!")
+
+class astrovideoWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Wrangle Astro Video Data")
+
+        #set sizing
+        D = self.screen().availableGeometry()
+        self.move(1,1)#center.x() + .25*D.width() , center.y() - .5*D.height() )
+        self.resize( int(.3*D.width()), int(.4*D.height()) )
+        self.setWindowState(self.windowState() & ~QtCore.Qt.WindowState.WindowMinimized
+                            | QtCore.Qt.WindowState.WindowActive)
+        self.activateWindow()
+        
+        self.grid_layout = QGridLayout()
+
+        spacer1 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        spacer2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        spacer3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        spacer4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        #add inputs
+        welcome_label = QLabel("Welcome to the Astro data wrangling tool!")
+        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        font = QFont()
+        font.setBold(True)
+        welcome_label.setFont(font)  
+
+        ### LIDAR, OUTPUT, and RUN ###
+        #lidar folder
+        flightlogfold_button = QPushButton("Flight log folder",self)
+        flightlogfold_button.clicked.connect(lambda: self.select_dir(1))
+        self.flightlogfold_sel_label = QLabel("", self)
+        self.flightlogfold_sel_label.setStyleSheet("border: 1px dashed black; padding: 2px; font-style: italic;")
+
+        ### VIDEOS ###
+        #folder w/ videos
+        vidfold_button = QPushButton("Video folder",self)
+        vidfold_button.clicked.connect(lambda: self.select_dir(2))
+        self.vidfold_sel_label = QLabel("", self)
+        self.vidfold_sel_label.setStyleSheet("border: 1px dashed black; padding: 2px; font-style: italic;")
+
+        # exif tag selection
+        self.open_exif_help_button = QPushButton("Exif Tag Viewer",self)
+        self.open_exif_help_button.clicked.connect(self.open_exif_viewer)
+
+        self.exif_tags_dropdown_name = QComboBox(self)
+        self.exif_tags_dropdown_date = QComboBox(self)
+
+        ### OUTPUT AND RUN ###
+        #output prefix and folder selection
+        self.output_prefix_box = QLineEdit()
+
+        outfold_button = QPushButton("Output folder",self)
+        outfold_button.clicked.connect(lambda: self.select_dir(3))
+        self.outfold_sel_label = QLabel("", self)
+        self.outfold_sel_label.setStyleSheet("border: 1px dashed black; padding: 2px; font-style: italic;")
+
+        #run button
+        astrovideo_run_button = QPushButton("Run!",self)
+        astrovideo_run_button.setFont(font)
+        astrovideo_run_button.setStyleSheet("color: red;")
+        astrovideo_run_button.clicked.connect(self.astrowrangle)
+
+        #end message
+        self.end_msg = QLabel("",self)
+        self.end_msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.end_msg.setFont(font)
+
+        #### GRID LAYOUT ####
+        #add labels and buttons to grid layout
+        self.grid_layout.addWidget(welcome_label,0,0,1,6)
+        self.grid_layout.addItem(spacer1, 1, 0,1,6)
+
+        ## FLIGHTLOG FOLDER
+        self.grid_layout.addWidget(QLabel("Click to select folder containing flight logs"),2,1,1,1)
+        self.grid_layout.addWidget(flightlogfold_button, 2,0,1,1)
+
+        self.grid_layout.addWidget(self.flightlogfold_sel_label, 3,0,1,2)
+
+        self.grid_layout.addItem(spacer2, 4,0,1,2)
+
+        ## VIDEO FOLDER
+        self.grid_layout.addWidget(QLabel("Click to select folder\ncontaining raw drone videos"), 5,1,1,1)
+        self.grid_layout.addWidget(vidfold_button, 5,0,1,1)
+
+        self.grid_layout.addWidget(self.vidfold_sel_label, 6,0,1,2)
+
+        self.grid_layout.addWidget(QLabel("Default tag names should appear when\nvideo folder is selected, but if not\nclick the 'Exif Tag Viewer' for help"),7,0,1,1)
+        self.grid_layout.addWidget(self.open_exif_help_button,7,1,1,1)
+        self.grid_layout.addWidget(QLabel("Select file name exif tag"),8,0,1,1)
+        self.grid_layout.addWidget(self.exif_tags_dropdown_name,8,1,1,1)
+        self.grid_layout.addWidget(QLabel("Select modify date exif tag"),9,0,1,1)
+        self.grid_layout.addWidget(self.exif_tags_dropdown_date,9,1,1,1)
+
+        self.grid_layout.addItem(spacer3, 10,0,1,2)
+
+        ## OUTPUT SETTINGS, and RUN BUTTON
+        self.grid_layout.addWidget(QLabel("Output prefix:"),11,0,1,1)
+        self.grid_layout.addWidget(self.output_prefix_box,11,1,1,1)
+
+        self.grid_layout.addWidget(QLabel("Click to select folder where output should be saved"),12,0,1,1)
+        self.grid_layout.addWidget(outfold_button, 12,1,1,1)
+
+        self.grid_layout.addWidget(self.outfold_sel_label, 13,0,1,2)
+
+        self.grid_layout.addItem(spacer4, 14,0,1,2)
+
+        self.grid_layout.addWidget(astrovideo_run_button,15,0,1,2)
+
+        self.grid_layout.addWidget(self.end_msg,16,0,1,2)
+
+        # Create a scroll area and set your grid layout as its widget
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # Makes the widget inside the scrollable
+
+        scroll_contents = QWidget()
+        scroll_contents.setLayout(self.grid_layout)
+        scroll_area.setWidget(scroll_contents)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(scroll_area)
+        self.setLayout(main_layout)
+
+        # Initialize default selections
+        self.default_selections = {
+            self.exif_tags_dropdown_name: 'FileName',
+            self.exif_tags_dropdown_date: 'FileModifyDate',
+        }
+
+        #exif viewer is now an instance variable
+        self.exif_help_window = ExifViewer()
+
+    def select_dir(self, button_id):
+        dir_path = DirSelector.select_dir()
+        if dir_path:
+            if button_id == 1:
+                self.flightlogpath = dir_path
+                self.flightlogfold_sel_label.setText(dir_path)
+
+            elif button_id == 2:
+                self.vidpath = dir_path
+                self.vidfold_sel_label.setText(dir_path)
+
+                #make list of videos
+                self.video_names = []
+                self.video_list = []
+                for root, dirs, files in os.walk(dir_path):
+                    self.video_names += [m for m in files if m.endswith((".MOV",".MP4")) & ~m.startswith(".")]
+                    self.video_list += [os.path.join(root,m) for m in files if m.endswith((".MOV",".MP4")) & ~m.startswith(".")]
+
+                # Fetch Exif tags for the selected file
+                if os.name == 'nt': #windows
+                    exifpath = os.path.join(sys._MEIPASS,"exiftool.exe")
+                else: #mac
+                    exifpath = '/usr/local/bin/exiftool'
+
+                with ExifToolHelper(exifpath) as et:
+                    self.exif_tags = et.get_tags(self.video_list[0],[])
+
+                exif_tags1 = [x.split(":")[1] if len(x.split(":"))>1 else x for x in list(self.exif_tags[0].keys()) ]
+                # run update exiftag drop down
+                for dropdown, default_selection in self.default_selections.items():
+                    self.update_exif_tags(dropdown, exif_tags1, default_selection)
+
+            elif button_id == 3:
+                self.outpath = dir_path
+                self.outfold_sel_label.setText(dir_path)
+
+    def update_exif_tags(self, dropdown, exif_tags, default_selection):
+        # Update the Exif tags dropdown
+        dropdown.clear()
+        dropdown.addItems(["select tag"])
+        dropdown.addItems(exif_tags)
+
+        # Set the default selection
+        index = dropdown.findText(default_selection)
+        if index != -1:
+            dropdown.setCurrentIndex(index)
+
+    def open_exif_viewer(self):
+        dfexif = pd.DataFrame.from_dict(self.exif_tags[0],orient='index').reset_index().rename(columns={'index':'tag',0:'value'})
+
+        #pass to exif viewer
+        self.exif_help_window.set_dataframe(dfexif)
+        self.exif_help_window.show()
+
+    def astrowrangle(self):
+        # step 1 - wrangle lidar data
+        log_files = [os.path.join(r, m) for r, dirs, files in os.walk(self.flightlogpath) for m in files if m.endswith(('.csv',".CSV")) & ~m.startswith(".")]
+        log_all = pd.DataFrame(data={})
+        for lf in log_files:
+            df_log = pd.read_csv(lf)
+            # make date time from unix time
+            df_log['DateTime'] = pd.to_datetime(df_log["Unix Time (ms)"],unit='ms')
+            df_log['DateTime'] = [x.strftime('%Y-%m-%d %H:%M:%S') for x in df_log['DateTime']]
+            df_log['DateTime'] = pd.to_datetime(df_log['DateTime'])
+
+            # make date column
+            df_log['VideoDate'] = [x.strftime("%Y-%m-%d") for x in df_log['DateTime']]
+
+            # add column with the first recorded datetime
+            df_log['FlightStartTime'] = df_log['DateTime'].to_list()[0]
+
+            # filter out video time = NA
+            df_log = df_log.loc[pd.isna(df_log['Video Time (s)']) == False]
+
+            # make video time column with time rounded to the second
+            df_log['VideoTime'] = [str(x).split(".")[0] for x in df_log['Video Time (s)']]
+
+            # rename Altitude column to uncorrect Barometer
+            df_log = df_log.rename(columns={'Altitude (m above takeoff location)':'Baro_Alt_uncorr'})
+
+            # make laser altitude column but convert 0.00 (error msg I think) to NaN
+            df_log['Laser_Alt'] = df_log['Camera Range (m)'].replace(0.00,np.nan)
+
+            # avergae altitudes by the second (need to double check if averaging is right) - FIX THSI
+            df_log = df_log.groupby('VideoTime').agg({'VideoDate':'first', 'FlightStartTime':'first','Laser_Alt':'median','Baro_Alt_uncorr':'median'}).reset_index()
+
+            # make VideoTime time delta
+            df_log['VideoTime'] = [timedelta(seconds = int(x)) for x in df_log['VideoTime']]
+            
+            log_all = pd.concat([log_all,df_log])
+
+        # step 2 - wrangle video start times
+        # pull meta from videos
+        movs = self.video_list
+
+        dfvideo = pd.DataFrame()
+        tagnames = []
+
+        #set up path to exiftool
+        if os.name == 'nt': #windows
+            exifpath = os.path.join(sys._MEIPASS,"exiftool.exe")
+        else: #mac
+            exifpath = '/usr/local/bin/exiftool'
+
+        with ExifToolHelper() as et:
+            for d in et.get_tags(movs, tags=[self.exif_tags_dropdown_name.currentText(),
+                                             self.exif_tags_dropdown_date.currentText()]):
+                tempdict = {}
+                for k, v in d.items():
+                    tempdict[k] = v
+                    tagnames += [k]
+                tempdf = pd.DataFrame(data=tempdict,index=[0])
+
+                dfvideo = pd.concat([dfvideo,tempdf]).reset_index(drop=True)
+
+        tagnames1 = list(set(tagnames))
+        nametag = [x for x in tagnames1 if self.exif_tags_dropdown_name.currentText() in x][0]
+        datetag = [x for x in tagnames1 if self.exif_tags_dropdown_date.currentText() in x][0]
+
+        dfvideo = dfvideo.rename(columns={nametag:"MOV",datetag:"MDT" })
+
+        dfvideo['VideoID'] = [x.replace(".MP4","") for x in dfvideo['MOV']]
+        dfvideo['MDT'] = [datetime.strptime((x.split("-")[0]),"%Y:%m:%d %H:%M:%S")  for x in dfvideo['MDT']] #extract just the time from the modify date/time
+        dfvideo['VideoDate'] = [x.strftime("%Y-%m-%d") for x in dfvideo['MDT']]
+        dfvideo = dfvideo.drop(['SourceFile','MOV'],axis=1) #drop the columns that just contain the list outputs
+
+        # step 3 - merge
+        astro_merge = pd.merge_asof(log_all.sort_values(by=['FlightStartTime']),dfvideo.sort_values(by=['MDT']),
+                         left_on = "FlightStartTime", right_on="MDT", by = "VideoDate",
+                         direction="nearest",allow_exact_matches=True)
+        astro_merge = astro_merge[['VideoID','VideoTime','Laser_Alt','Baro_Alt_uncorr']]
+
+        #export 
+        astro_merge.to_csv(os.path.join(self.outpath,"{0}_VideoLidar.csv".format(self.output_prefix_box.text())),index=False)
 
         # print message telling user that its done running!
         self.end_msg.setText("Done running - check output folder for files!")
@@ -359,7 +637,7 @@ class lidarvideoWindow(QWidget):
         #### GRID LAYOUT ####
         #add labels and buttons to grid layout
         self.grid_layout.addWidget(welcome_label,0,0,1,6)
-        self.grid_layout.addItem(spacer1, 1, 0,1,6)
+        self.grid_layout.addItem(spacer1, 1, 0,1,6) 
 
         ## GPS FILE section
         self.grid_layout.addWidget(QLabel("Click to upload GPS time file"),2,1,1,1)
@@ -2294,7 +2572,9 @@ class MainWindow(QMainWindow):
         grid_layout.setRowMinimumHeight(1, 1) #row 1
         grid_layout.setRowMinimumHeight(2, 1) # row 2
         grid_layout.setRowMinimumHeight(3, 1) # row 3
-        grid_layout.setRowMinimumHeight(4, 1) # row 3
+        grid_layout.setRowMinimumHeight(4, 1) # row 4
+        grid_layout.setRowMinimumHeight(5, 1) # row 4
+        grid_layout.setRowMinimumHeight(6, 1) # row 4
 
         #create labels and buttons
         welcome_label = QLabel("Welcome to the CollatriX home page!\nfrom here click on the tool you'd like use")
@@ -2305,7 +2585,7 @@ class MainWindow(QMainWindow):
 
         manual_label = QLabel("Click here to see our online manual")
         manual = QPushButton("Manual",self)
-        manual.clicked.connect(lambda: webbrowser.open('https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2_manual.pdf'))
+        manual.clicked.connect(lambda: webbrowser.open('https://github.com/MMI-CODEX/CollatriX/blob/master/CollatriX_v2-0-1_manual.pdf'))
 
         spacer1 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         spacer2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
@@ -2314,6 +2594,7 @@ class MainWindow(QMainWindow):
 
         # Create instances of your window classes
         self.lidarwrangle_window = lidarwranglerWindow()
+        self.astrovideo_window = astrovideoWindow()
         self.lidar_window = lidarvideoWindow()
         self.lidarmatch_window = lidarmatchWindow()
         self.lidarimage_window = lidarimageWindow()
@@ -2321,12 +2602,21 @@ class MainWindow(QMainWindow):
         self.bodycond_window = bodycondWindow()
         
         # WRANGLE SECTION
+        ## NORMAL LIDAR
         wrangle_label = QLabel("Start here by wrangling your LiDAR data")
         wrangle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         wrangle_label.setFont(font)
         button0_label = QLabel("This tool will collate together\nall your LiDAR data into one clean csv")
         button0 = QPushButton("Wrangle LiDAR data",self)
         button0.clicked.connect(self.show_lidarwrangle_window)
+
+        ## ASTRO
+        astrovideo_label = QLabel("Click here to process Astro data")
+        astrovideo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        astrovideo_label.setFont(font)
+        button0x_label = QLabel("This tool will collate together\nall your LiDAR data and video time into one clean csv")
+        button0x = QPushButton("Wrangle and Merge Astro data",self)
+        button0x.clicked.connect(self.show_astrovideo_window)
 
         # VIDEO SECTION
         video_label = QLabel("Use these tools if you record video during flight")
@@ -2376,29 +2666,33 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(wrangle_label,3,1,1,2)
         grid_layout.addWidget(button0_label,4,2,1,1)
         grid_layout.addWidget(button0,4,1,1,1)
-        grid_layout.addItem(spacer2, 5, 0,1,4)
 
-        grid_layout.addWidget(video_label,6,0,1,2)
-        grid_layout.addWidget(button1_label,7,1,1,1)
-        grid_layout.addWidget(button1,7,0,1,1)
-        grid_layout.addWidget(button1x_label,8,1,1,1)
-        grid_layout.addWidget(button1x,8,0,1,1)
+        grid_layout.addWidget(astrovideo_label,5,1,1,2)
+        grid_layout.addWidget(button0x_label,6,2,1,1)
+        grid_layout.addWidget(button0x,6,1,1,1)
+        grid_layout.addItem(spacer2, 7, 0,1,4)        
 
-        grid_layout.addWidget(image_label,6,2,1,2)
-        grid_layout.addWidget(button1y_label,7,3,1,1)
-        grid_layout.addWidget(button1y,7,2,1,1)
-        grid_layout.addItem(spacer3, 9, 0,1,4)
+        grid_layout.addWidget(video_label,8,0,1,2)
+        grid_layout.addWidget(button1_label,9,1,1,1)
+        grid_layout.addWidget(button1,9,0,1,1)
+        grid_layout.addWidget(button1x_label,10,1,1,1)
+        grid_layout.addWidget(button1x,10,0,1,1)
 
-        grid_layout.addWidget(collate_label,10,1,1,2)
-        grid_layout.addWidget(button2_label,11,2,1,1)
-        grid_layout.addWidget(button2, 11, 1,1,1)
+        grid_layout.addWidget(image_label,8,2,1,2)
+        grid_layout.addWidget(button1y_label,9,3,1,1)
+        grid_layout.addWidget(button1y,9,2,1,1)
+        grid_layout.addItem(spacer3, 11, 0,1,4)
 
-        grid_layout.addWidget(bodycond_label,12,1,1,2)
-        grid_layout.addWidget(button3_label,13,2,1,1)
-        grid_layout.addWidget(button3, 13, 1,1,1)
-        grid_layout.addItem(spacer4, 14, 0,1,4)   
+        grid_layout.addWidget(collate_label,12,1,1,2)
+        grid_layout.addWidget(button2_label,13,2,1,1)
+        grid_layout.addWidget(button2, 13, 1,1,1)
 
-        grid_layout.addWidget(self.exit,15,0,1,4)
+        grid_layout.addWidget(bodycond_label,14,1,1,2)
+        grid_layout.addWidget(button3_label,15,2,1,1)
+        grid_layout.addWidget(button3, 15, 1,1,1)
+        grid_layout.addItem(spacer4, 16, 0,1,4)   
+
+        grid_layout.addWidget(self.exit,17,0,1,4)
 
         central_widget = QWidget(self)
         central_widget.setLayout(grid_layout)
@@ -2406,6 +2700,9 @@ class MainWindow(QMainWindow):
 
     def show_lidarwrangle_window(self):
         self.lidarwrangle_window.show()
+    
+    def show_astrovideo_window(self):
+        self.astrovideo_window.show()
 
     def show_lidar_window(self):
         self.lidar_window.show()
