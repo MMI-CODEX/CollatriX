@@ -474,7 +474,7 @@ class astrovideoWindow(QWidget):
             df_log['Laser_Alt'] = df_log['Camera Range (m)'].replace(0.00,np.nan)
 
             # avergae altitudes by the second (need to double check if averaging is right) - FIX THSI
-            df_log = df_log.groupby('VideoTime').agg({'VideoDate':'first', 'FlightStartTime':'first','Laser_Alt':'mean','Baro_Alt_uncorr':'mean'}).reset_index()
+            df_log = df_log.groupby('VideoTime').agg({'VideoDate':'first', 'FlightStartTime':'first','Laser_Alt':'median','Baro_Alt_uncorr':'median'}).reset_index()
 
             # make VideoTime time delta
             df_log['VideoTime'] = [timedelta(seconds = int(x)) for x in df_log['VideoTime']]
