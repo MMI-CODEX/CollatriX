@@ -88,5 +88,5 @@ Copyright (c) 2020 Clara Bird, KC Bierlich
 
 ## Authors
 
-* **Clara N. Bird** - *Researcher, PhD Wildlife Science* - [Clara Bird](https://mmi.oregonstate.edu/people/clara-bird)
+* **Clara N. Bird** - *Postdoctoral Scholar, PhD Wildlife Science* - [Clara Bird](https://mmi.oregonstate.edu/people/clara-bird)
 * **KC Bierlich** - *Assistant Professor Senior Research, PhD Marine Science and Conservation* - [KC Bierlich](https://mmi.oregonstate.edu/people/kevin-bierlich)
