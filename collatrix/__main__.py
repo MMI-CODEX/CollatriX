@@ -24,7 +24,7 @@ from PySide6.QtGui import QFont, QDoubleValidator, QStandardItemModel, QStandard
 
 
 # UPDATE WITH UPDATES
-cx_version = "v2.0.1"
+cx_version = "v2.0.2"
 
 class FileSelector:
     def select_file():
