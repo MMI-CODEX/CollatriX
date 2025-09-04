@@ -193,7 +193,10 @@ class lidarwranglerWindow(QWidget):
             laser_all = pd.DataFrame(data={})
             for lf in lidar_files:
                 df_laser = pd.read_csv(lf,sep='\t',skiprows=2) #read in lidar file, seperator is a tab, skip the first two rows, they have too few columns
-                
+                # if the file has been opened and re-saved as a csv it is not comma sperated, not tab seperated, so read in again if tab seperator reads in as one column
+                if len(df_laser.columns) == 1:
+                    df_laser = pd.read_csv(lf,sep=',',skiprows=2)
+
                 ## the lightware and O3ST have slightly different outputs, so using the laser altitude column from each model
                 if self.lidartypes_list.currentText() == 'LightWare (csv)':
                     df_laser['laser_altitude_cm'] = df_laser['laser_altitude_cm'].replace(dict.fromkeys([13000,15000], np.nan)) #make the error value (130) to nan
